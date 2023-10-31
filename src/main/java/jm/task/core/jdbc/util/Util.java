@@ -10,7 +10,7 @@ public class Util {
     // реализуйте настройку соеденения с БД
     private static final String URL = "jdbc:mysql://localhost:3306/1_1_3-4_jdbc";
     private static final String USERNAME = "root";
-    private static final String PASSWORD = "Skagen012!";
+    private static final String PASSWORD = "root";
     private Connection connection;
 
     public Connection getConnection() {
