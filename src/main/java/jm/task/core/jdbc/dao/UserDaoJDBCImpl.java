@@ -12,7 +12,7 @@ public class UserDaoJDBCImpl implements UserDao {
     // (создать, удалить, сохранить пользователя и т.д.)
     //Все поля должны быть private
     //Обработка всех исключений, связанных с работой с базой данных должна находиться в dao
-    private Connection connection = new Util().getConnection();
+    private Connection connection = (Connection) new Util().getConnection();
     private PreparedStatement preparedStatement;
     private ResultSet resultSet;
     private List<User>  listUsers = new ArrayList<>();
