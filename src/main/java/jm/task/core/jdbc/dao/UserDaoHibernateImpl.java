@@ -8,41 +8,37 @@ import org.hibernate.SQLQuery;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 
-import java.sql.SQLException;
+import javax.persistence.Query;
 import java.util.List;
 
 public class UserDaoHibernateImpl implements UserDao {
-    private final String CREATE_TABLE = "CREATE TABLE users (id int NOT NULL PRIMARY KEY AUTO_INCREMENT, name varchar(45), lastName varchar(45), age int)";
-    private final String DROP_TABLE = "DROP TABLE users";
-    private final String DELETE_All = "DELETE FROM users";
 
     public UserDaoHibernateImpl() {
 
     }
 
-
     @Override
     public void createUsersTable() {
         try (Session session = new Util().getConnection().openSession()) {
             Transaction transaction = session.beginTransaction();
-            SQLQuery query = session.createSQLQuery(CREATE_TABLE);
-            query.executeUpdate();
+            session.createSQLQuery("CREATE TABLE IF NOT EXISTS users (id int NOT NULL PRIMARY KEY AUTO_INCREMENT, name varchar(45), lastName varchar(45), age int)").executeUpdate();
             transaction.commit();
-
             System.out.println("Таблица создана");
         } catch (Exception e) {
             System.out.println("Таблица НЕ создана");
+            }
         }
-    }
 
     @Override
     public void dropUsersTable() {
         try (Session session = new Util().getConnection().openSession()) {
             Transaction transaction = session.beginTransaction();
-            SQLQuery query = session.createSQLQuery(DROP_TABLE);
+            SQLQuery query = session.createSQLQuery("DROP TABLE IF EXISTS users");
             query.executeUpdate();
             transaction.commit();
             System.out.println( "Таблица удалена" );
+        } catch (Exception e) {
+            System.out.println("Таблица НЕ удалена");
         }
     }
 
@@ -50,52 +46,66 @@ public class UserDaoHibernateImpl implements UserDao {
     public void saveUser(String name, String lastName, byte age) {
         Transaction transaction = null;
         try (Session session = new Util().getConnection().openSession()) {
-                // start a transaction
                 transaction = session.beginTransaction();
-                // save the student object
                 session.save(new User(name, lastName, age));
-                // commit transaction
                 transaction.commit();
 
             System.out.println("User с именем – "+name+ " добавлен в базу данных");
         } catch (Exception e) {
             System.out.println("User с именем – "+name+ " НЕ добавлен в базу данных");
-            e.printStackTrace();
+            if (transaction != null) {
+                transaction.rollback();
+            }
         }
     }
 
     @Override
     public void removeUserById(long id) {
         Transaction transaction = null;
-        try (Session session = new Util().getConnection().openSession()) {
-            System.out.println(session.get(User.class, id));
-            // start a transaction
+        Session session = new Util().getConnection().openSession();
+        try {
             transaction = session.beginTransaction();
-            // delete user by id
-            session.delete(session.get(User.class, id));
-            // commit transaction
+            Query query = session.createQuery("DELETE User WHERE id = :id").setParameter( "id",id );
+            query.executeUpdate();
             transaction.commit();
 
-
             System.out.println("User с id – "+id+ " удален");
+        } catch (Exception e) {
+            if (transaction != null) {
+                transaction.rollback();
+
+            }
         }
     }
 
     @Override
     public List<User> getAllUsers() {
-        try (Session session = new Util().getConnection().openSession()) {
+        Transaction transaction = null;
+        Session session = new Util().getConnection().openSession();
+        try  {
             return session.createQuery("from User", User.class).list();
+        } catch (Exception e) {
+            if (transaction != null) {
+                transaction.rollback();
+            }
         }
+        return session.createQuery("from User", User.class).list();
     }
 
     @Override
     public void cleanUsersTable() {
-        try (Session session = new Util().getConnection().openSession()) {
-            Transaction transaction = session.beginTransaction();
-            SQLQuery query = session.createSQLQuery(DELETE_All);
+        Transaction transaction = null;
+        Session session = new Util().getConnection().openSession();
+        try {
+            transaction = session.beginTransaction();
+            SQLQuery query = session.createSQLQuery("DELETE FROM users");
             query.executeUpdate();
             transaction.commit();
             System.out.println("База очищена");
+        } catch (Exception e) {
+            if (transaction != null) {
+                transaction.rollback();
+            }
         }
     }
 }
